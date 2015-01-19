@@ -81,7 +81,7 @@ shinyServer(function(input,output){
   
   ##OUTPUTS###################################################
   #CHARTS
-    
+  
   output$MAIN <- renderGvis({
     if (is.null(ready())) return(NULL)
     df <- sumCum()
@@ -89,20 +89,20 @@ shinyServer(function(input,output){
                             yvar=c("netRevenue", "cum"),
                             #options=list(seriesType="bars",series='{1: {type:"line"}}')
                             options=list(height=300,
-                                          series="[{
-                                          type:'bars', targetAxisIndex:0
-                                          },{
-                                          type:'line', targetAxisIndex:1
-                                          }]",
+                                         series="[{
+                                         type:'bars', targetAxisIndex:0
+  },{
+                                         type:'line', targetAxisIndex:1
+  }]",
                                           vAxes="[{title:'GBP/month'}, {title:'GBP/cumulative'}]",
-                                          title= "bookings net revenue month by month"
+                                         title= "bookings net revenue month by month"
                             )
-                            )
-  })
+    )
+})
 
-  output$ZONE <- renderGvis({
-    if (is.null(ready())) return(NULL)
-    
+output$ZONE <- renderGvis({
+  if (is.null(ready())) return(NULL)
+  
   dat <- ddply (all(), "Tariff.Zone", summarize, count = length(Is.Cancelled))
   dat$Tariff.Zone  <- as.character(dat$Tariff.Zone)
   doughnut <- gvisPieChart(dat, 
@@ -115,11 +115,11 @@ shinyServer(function(input,output){
                              pieHole=0.5),
                            chartid="doughnut")
   return(doughnut)
-  })
+})
 
-  output$DAY <- renderGvis({
-    if (is.null(ready())) return(NULL)
-    
+output$DAY <- renderGvis({
+  if (is.null(ready())) return(NULL)
+  
   dat <- ddply (all(), "day", summarize, count = length(Is.Cancelled))
   #dat <- dat[order(as.Date(dat$day, format="%d"),]
   dat$day <- as.character(dat$day)
@@ -134,9 +134,9 @@ shinyServer(function(input,output){
                              pieHole=0.35),
                            chartid="doughnut2")
   
-  })
+})
 
-  output$dayPlot <- renderGvis({
+output$dayPlot <- renderGvis({
   if (is.null(ready())) return(NULL)
   
   sumBookings <- sumDate()
@@ -159,16 +159,16 @@ shinyServer(function(input,output){
                           yvar=c("netRevenue", "bookings"),
                           #options=list(seriesType="bars",series='{1: {type:"line"}}')
                           options=list(series="[{
-                                         type:'line', targetAxisIndex:0
-  },{
-                                         type:'line', targetAxisIndex:1
-  }]",
+                                       type:'line', targetAxisIndex:0
+},{
+                                       type:'line', targetAxisIndex:1
+}]",
                                        vAxes="[{title:'net revenue in GBP'}, {title:'number of bookings'}]",
                                        title= "daily bookings and net revenue",
                                        width = 800
                           )
   )
-  })
+})
 
 
 #SUMMARY TEXT#
@@ -249,9 +249,17 @@ output$mapContainer <- renderMap({
 })
 
 #TABLE
-output$contents  <- renderTable({
+output$contents  <- renderDataTable({
   if (is.null(ready())) return(NULL)
   
-  sumDate()
-})
+  sumBookings  <- sumDate()
+  #manipulating for prettyness
+  sumBookings$Outward.Journey.Delivery.Date <- NULL
+  sumBookings$meanBags  <- round(sumBookings$meanBags,1)
+  sumBookings$netRevenue <- round(sumBookings$netRevenue,2)
+  sumBookings$meanNetRevenue <- round(sumBookings$meanNetRevenue,2)
+
+  sumBookings
+  
   })
+})
