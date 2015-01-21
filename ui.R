@@ -83,12 +83,12 @@ shinyUI(fluidPage(
                    #                             end = as.character(Sys.Date()), label = h6("Date range")),
                    #              
                    #airport input
-                   selectInput("airport", label = h6("Filter by airport (not in use)"),
-                               choices = list("All", "LHR", "LGW", "LCY", "Storage"), selected = "All"),
+#                    selectInput("airport", label = h6("Filter by airport (not in use)"),
+#                                choices = list("All", "LHR", "LGW", "LCY", "Storage"), selected = "All"),
                    
-                   checkboxGroupInput("checkAirport", label = h6("custom selection"), 
-                                      choices = list("LHR" = 1, "LGW" = 2, "LCY" = 3, "Storage" = 4),
-                                      selected = c(1,2,3,4))
+                   checkboxGroupInput("checkAirport", label = h6("Select booking source"), 
+                                      choices = c("LHR", "LGW", "LCY", "STN", "Storage"),
+                                      selected = c("LHR", "LGW", "LCY", "STN", "Storage"))
                    
                )
         ),
@@ -96,6 +96,13 @@ shinyUI(fluidPage(
         
         ##TOP CHARTS
         column(9,
+               
+               ##Title
+               fluidRow(
+                 div(style="color:#36648B;padding:10px",
+                   h5(textOutput("selectedAirports"))
+                   )
+                 ),
                
                ##Main
                fluidRow(

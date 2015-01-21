@@ -23,6 +23,17 @@ shinyServer(function(input,output){
   })
   
   #MAIN DATA FRAME: all()
+  
+  filter <- reactive({
+    vec <- input$checkAirport
+    vec <- gsub("LHR","Heathrow",vec)
+    vec <- gsub("LGW","Gatwick",vec)
+    vec <- gsub("STN","Stansted",vec)
+    vec <- gsub("Storage","Storage",vec)
+    vec <- gsub("LCY","London City Airport",vec)
+    vec
+  })
+  
   all  <- reactive({
     temp  <- input$file
     
@@ -43,6 +54,10 @@ shinyServer(function(input,output){
     #Cleaning up postCodes
     bookings$from <- as.character(bookings$Outward.Journey.Collect.From.Location.Postcode)
     bookings$to <- as.character(bookings$Outward.Journey.Deliver.To.Location.Postcode)
+    
+    #FILTERING
+    bookings$filter  <- grepl(paste(filter(),collapse="|"),bookings$Outward.Journey.Collect.From.Location.Name,ignore.case=TRUE)|grepl(paste(filter(),collapse="|"),bookings$Outward.Journey.Deliver.To.Location.Name,ignore.case=TRUE)
+    bookings <- bookings[bookings$filter == 1,]
     
     bookings
   })
@@ -107,8 +122,8 @@ output$ZONE <- renderGvis({
   dat$Tariff.Zone  <- as.character(dat$Tariff.Zone)
   doughnut <- gvisPieChart(dat, 
                            options=list(
-                             width=300,
-                             height=300,
+                             width=230,
+                             height=230,
                              title='Zone Breakdown',
                              legend='none',
                              pieSliceText='label',
@@ -126,8 +141,8 @@ output$DAY <- renderGvis({
   
   doughnut <- gvisPieChart(dat, 
                            options=list(
-                             width=300,
-                             height=300,
+                             width=230,
+                             height=230,
                              title='Day Breakdown',
                              legend='none',
                              pieSliceText='label',
@@ -176,6 +191,10 @@ output$dayPlot <- renderGvis({
 output$textDates  <- renderText({
   paste("showing summary for",range()[1]," to ",range()[2])
 })
+#show selected airports
+output$selectedAirports <- renderText({
+  paste("showing: ",paste(filter(),collapse=", "))
+})
 
 #BOXED NUMBERS
 #bookings
@@ -212,6 +231,14 @@ output$mY  <- renderText({
   
   df <- sumDate()
   paste(round(sum(df$netRevenue)/sum(df$bookings), digits = 2),"GBP")
+})
+#ne
+output$preBook <- renderText({
+  if(is.null(ready())) return(NULL)
+  
+  df <- all()
+  preBook <- round(sum(grepl("prebook",df$Department))/length(df$Department), digits=2)*100
+  paste(preBook,"%")
 })
 
 #MAP
