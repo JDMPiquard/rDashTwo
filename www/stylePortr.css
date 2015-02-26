@@ -1,0 +1,74 @@
+/* Simple Portr stylesheet for use with shiny*/
+
+h1, h2, h3{
+	color:#36648B;
+	
+}
+
+.box{
+background-color:#F2F2F2;
+border-radius:5px;
+padding:10px;
+text-align:center
+}
+
+.box h2, .box h3,.box h4,.box h5,.box h6{
+color: #4D4D4D;
+font-family: museo300, Helvetica, Arial, Sans;
+}
+
+.box p{
+color: #68838B;
+font-family: museo300, Helvetica, Arial, Sans;
+}
+
+.sideBox{
+background-color:#F2F2F2;
+border-radius:5px;
+padding:3px;
+text-align:left;
+padding-left:10px;
+}
+
+.sideBox h2, .sideBox h3,.sideBox h4, .sideBox h5,.sideBox h6{
+color: #4D4D4D;
+font-family: museo300, Helvetica, Arial, Sans;
+}
+
+.sideBox p{
+color: #68838B;
+}
+
+.statsContainer{
+	padding:0px; 
+	margin-top:20px; 
+	margin-bottom:30px; 
+	border-bottom: 
+	solid #f6f6f6
+}
+
+@font-face {
+    font-family: 'museo300';
+    src: url('fonts/Museo300-Regular-webfont.eot');
+    src: url('fonts/Museo300-Regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/Museo300-Regular-webfont.woff2') format('woff2'),
+         url('fonts/Museo300-Regular-webfont.woff') format('woff'),
+         url('fonts/Museo300-Regular-webfont.ttf') format('truetype'),
+         url('fonts/Museo300-Regular-webfont.svg#museo300') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}
+
+@font-face {
+    font-family: 'museo500';
+    src: url('fonts/Museo500-Regular-webfont.eot');
+    src: url('fonts/Museo500-Regular-webfont.eot?#iefix') format('embedded-opentype'),
+         url('fonts/Museo500-Regular-webfont.woff2') format('woff2'),
+         url('fonts/Museo500-Regular-webfont.woff') format('woff'),
+         url('fonts/Museo500-Regular-webfont.ttf') format('truetype'),
+         url('fonts/Museo500-Regular-webfont.svg#museo500') format('svg');
+    font-weight: normal;
+    font-style: normal;
+
+}

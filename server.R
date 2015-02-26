@@ -5,11 +5,11 @@ require(lubridate)
 require(ggmap)
 require(ggplot2)
 require(googleVis)
-options(RCHART_WIDTH = 600)
 
-shinyServer(function(input,output){
+shinyServer(function(input,output, clientData, session){
   
   ##TAKING CARE OF INPUTS AND MAKING THEM "GLOBAL"#############
+
   #store dates within: range()
   range  <-  reactive({
     input$dates
@@ -22,7 +22,6 @@ shinyServer(function(input,output){
     else return(1)
   })
   
-  #MAIN DATA FRAME: all()
   
   filter <- reactive({
     vec <- input$checkAirport
@@ -33,6 +32,9 @@ shinyServer(function(input,output){
     vec <- gsub("LCY","London City Airport",vec)
     vec
   })
+  
+  
+  #MAIN DATA FRAME: all()
   
   all  <- reactive({
     temp  <- input$file
@@ -78,7 +80,7 @@ shinyServer(function(input,output){
     sumBookings$rank  <- as.Date(paste0(sumBookings$year,'-',sumBookings$month,'-01'),"%Y-%m-%d")
     sumBookings <- sumBookings[order(sumBookings$rank),]
     sumBookings  <- within(sumBookings, cum  <- cumsum(netRevenue)) #calculating cummulatives
-    
+ 
   })
   
   bookingsRange  <- reactive({
@@ -151,6 +153,10 @@ output$DAY <- renderGvis({
   
 })
 
+#######TAB1
+
+##Detailed Day Plot########################################################
+
 output$dayPlot <- renderGvis({
   if (is.null(ready())) return(NULL)
   
@@ -189,14 +195,14 @@ output$dayPlot <- renderGvis({
 #SUMMARY TEXT#
 #show selected date range in title
 output$textDates  <- renderText({
-  paste("showing summary for",range()[1]," to ",range()[2])
+  paste("Summary for",range()[1]," to ",range()[2])
 })
 #show selected airports
 output$selectedAirports <- renderText({
   paste("showing: ",paste(filter(),collapse=", "))
 })
 
-#BOXED NUMBERS
+##BOXED NUMBERS: TAB 1######################################################
 #bookings
 output$W  <- renderText({
   if(is.null(ready())) return(NULL)
@@ -241,11 +247,11 @@ output$preBook <- renderText({
   paste(preBook,"%")
 })
 
-#MAP
+##MAP: TAB 1#################################################################################
 output$mapContainer <- renderMap({
   if (is.null(ready())) return(NULL)
   
-  if(input$showMap == 0)
+  if(input$showMap == F)
     return(NULL)
   
   bookings <- bookingsRange()
@@ -275,7 +281,9 @@ output$mapContainer <- renderMap({
   map
 })
 
-#TABLE
+##GENERATING TABLES!!##############################################
+
+#SUMMARY TABLE (TAB 1: SUMMARY)
 output$contents  <- renderDataTable({
   if (is.null(ready())) return(NULL)
   
@@ -289,4 +297,208 @@ output$contents  <- renderDataTable({
   sumBookings
   
   })
+
+########TAB2
+
+#PIE CHARTS
+
+#Sex
+output$sex <- renderGvis({
+  if (is.null(ready())) return(NULL)
+  
+  tit <- ddply (all(), "Title", summarize, count = length(Is.Cancelled))
+  tit$Title  <- as.character(tit$Title)
+  
+  doughnut <- gvisPieChart(tit, 
+                           options=list(
+                             width=230,
+                             height=230,
+                             title='Sex (using title)',
+                             legend='none',
+                             pieSliceText='label',
+                             pieHole=0.5),
+                           chartid="doughnutSex")
+  return(doughnut)
+})
+
+#Luggage Type
+output$luggage <- renderGvis({
+  if (is.null(ready())) return(NULL)
+  
+  allData <- all()
+  
+  lug <- as.data.frame(matrix(ncol=2,nrow=2))
+  lug[1,1] <- "Hand" 
+  lug[1,2]  <- sum(allData$Hand.Luggage.Count)
+  lug[2,1] <- "Hold"
+  lug[2,2]  <- sum(allData$Hold.Luggage.Count)
+  
+  doughnut <- gvisPieChart(lug, 
+                           options=list(
+                             width=230,
+                             height=230,
+                             title='Luggage type',
+                             legend='none',
+                             pieSliceText='label',
+                             pieHole=0.5),
+                           chartid="doughnutLug")
+  return(doughnut)
+})
+
+#Journey Type
+output$journey <- renderGvis({
+  if (is.null(ready())) return(NULL)
+    
+  tit <- ddply (all(), "Journey.Mode", summarize, count = length(Is.Cancelled))
+  tit$Journey.Mode  <- as.character(tit$Journey.Mode)
+  
+  doughnut <- gvisPieChart(tit, 
+                           options=list(
+                             width=230,
+                             height=230,
+                             title='Journey type',
+                             legend='none',
+                             pieSliceText='label',
+                             pieHole=0.5),
+                           chartid="doughnutJourney")
+  return(doughnut)
+})
+
+#Delivery Type
+output$type <- renderGvis({
+  if (is.null(ready())) return(NULL)
+  
+  allData <- all()
+  
+  lug <- as.data.frame(matrix(ncol=2,nrow=3))
+  lug[1,1] <- "Residential" 
+  lug[1,2]  <- sum(allData$Location.Organisation=="Residential")
+  lug[2,1] <- "Airport"
+  lug[2,2]  <- sum(allData$Journey.Direction=="AirportToAirport")
+  lug[3,1] <- "Non-Residential"
+  lug[3,2] <- length(allData$Is.Cancelled) - lug[2,2] - lug[1,2]
+  
+  doughnut <- gvisPieChart(lug, 
+                           options=list(
+                             width=230,
+                             height=230,
+                             title='Deliveries by type (Airport is faulty)',
+                             legend='none',
+                             pieSliceText='label',
+                             pieHole=0.5),
+                           chartid="doughnutType")
+  return(doughnut)
+})
+
+##DELIVERIES/COLLECTIONS BY HOUR############################
+output$hourPlot <- renderGvis({
+  if (is.null(ready())) return(NULL)
+  
+  allData <- all()
+  
+  allData$Collection.Slot  <- strftime(strptime(allData$Outward.Journey.Collection.Time, format="%H:%M"), "%H")
+  allData$Delivery.Slot  <- strftime(strptime(allData$Outward.Journey.Delivery.Time, format="%H:%M"), "%H")
+  allData$Created.Time  <- strftime(strptime(allData$Created.Time, format="%H:%M"), "%H")
+  
+  time1.df <- ddply (allData, c("Collection.Slot"), summarize, collections = length(Is.Cancelled))
+  #time1.df$collectionsPCT <- time1.df/length(allData$Is.Cancelled)*100
+  names(time1.df)[1] <- "time"
+  time2.df <- ddply (allData, c("Delivery.Slot"), summarize, deliveries = length(Is.Cancelled))
+  #time2.df$collectionsPCT <- time2.df/length(allData$Is.Cancelled)*100
+  names(time2.df)[1] <- "time"
+  time3.df <- ddply (allData, c("Created.Time"), summarize, created = length(Is.Cancelled))
+  #time2.df$collectionsPCT <- time2.df/length(allData$Is.Cancelled)*100
+  names(time3.df)[1] <- "time"
+  
+  timeMin <- strptime("00:00", format="%H")
+  timeMax <- strptime("23:00", format="%H")
+  allTime  <- strftime(seq(timeMin,timeMax,by="hour"), "%H")
+  
+  allTime.df <- data.frame(list(time=allTime))
+  
+  Times <- merge(allTime.df,time1.df, all=T)
+  Times <- merge(Times,time2.df, all=T)
+  Times <- merge(Times,time3.df, all=T)
+  Times$collections[which(is.na(Times$collections))] <- 0
+  Times$deliveries[which(is.na(Times$deliveries))] <- 0
+  Times$created[which(is.na(Times$created))] <- 0
+  Times$time <- strftime(strptime(Times$time, format="%H"), "%H:%M")
+  
+  gvisLineChart(Times, options=list(
+                        title='Deliveries, collections and bookings created by hour slot', height=400, width=960))
+  
+})
+
+
+#NATIONALITIES TABLE (TAB 2: STATISTICS)
+
+output$nation  <- renderDataTable({
+  if (is.null(ready())) return(NULL)
+  
+  allData <- all()
+  
+  nat.df <- ddply (allData, "Country", summarize, bookings = length(Is.Cancelled), totalBags = sum(Total.Luggage.Count), meanBags = round(mean(Total.Luggage.Count),digits=1), netRevenue = round(sum(Booking.Value)/1.2))
+  nat.df$avgRevenue <- round(nat.df$netRevenue/nat.df$bookings, digits=2)
+  nat.df <- nat.df[with(nat.df,order(-bookings,-avgRevenue)), ]
+  rownames(nat.df) <- NULL
+  
+  nat.df
+}, options = list(pageLength = 5))
+
+#REPEAT CUSTOMERS TABLE (TAB 2: STATISTICS)
+reUser <- reactive({
+  allData <- all()
+  
+  reUser.df <- ddply (allData, "Email.Address", summarize, bookings = length(Is.Cancelled), totalBags = sum(Total.Luggage.Count), meanBags = round(mean(Total.Luggage.Count),digits=1), netRevenue = round(sum(Booking.Value)/1.2))
+  reUser.df$avgRevenue <- round(reUser.df$netRevenue/reUser.df$bookings, digits=2)
+  reUser.df <- reUser.df[with(reUser.df,order(-bookings,-avgRevenue)), ]
+  reUser.df <- reUser.df[reUser.df$bookings>1,]
+  reUser.df <- reUser.df[- grep("bagstorage@portr.com",reUser.df$Email.Address), ]
+  rownames(reUser.df) <- NULL
+  
+  reUser.df
+  
+})
+
+output$reUser  <- renderText({
+  if (is.null(ready())) return(NULL)
+  
+  allData <- all()
+  
+  reUser.df <- reUser()
+  
+  reUser <- length(reUser.df$bookings)
+  reUserpct <- round(reUser/length(allData$Is.Cancelled),digits=3)*100
+  paste("Repeat Users: ", reUser, "total, so about ",reUserpct,"%")
+  
+  })
+
+output$custom <- renderDataTable({
+  if (is.null(ready())) return(NULL)
+  
+  reUser()
+  
+}, options = list(pageLength = 5))
+
+#TABLE MAIN DELIVERY DESTINATIONS
+
+output$loc <- renderDataTable({
+  if (is.null(ready())) return(NULL)
+  
+  allData <- all()
+  
+  loc.df <- ddply (allData, "Location.Organisation", summarize, bookings = length(Is.Cancelled), totalBags = sum(Total.Luggage.Count), meanBags = round(mean(Total.Luggage.Count),digits=1), netRevenue = round(sum(Booking.Value)/1.2))
+  loc.df$avgRevenue <- round(loc.df$netRevenue/loc.df$bookings, digits=2)
+  loc.df <- loc.df[with(loc.df,order(-bookings,-avgRevenue)), ]
+  loc.df <- loc.df[loc.df$bookings>1,]
+  loc.df <- loc.df[loc.df$netRevenue>0,]
+  loc.df <- loc.df[- grep("Residential",loc.df$Location.Organisation), ]
+  loc.df <- loc.df[- grep("Airportr",loc.df$Location.Organisation), ]
+  rownames(loc.df) <- NULL
+  
+  loc.df
+  
+}, options = list(pageLength = 10))
+
+
 })
