@@ -1,8 +1,19 @@
 /* Simple Portr stylesheet for use with shiny*/
 
-h1, h2, h3{
+h1, h2, h3, h4{
 	color:#36648B;
 	
+}
+
+.topBox{
+padding:10px;
+border-bottom: solid #f6f6f6;
+border-top: solid #f6f6f6;
+}
+
+.topBox h2, .topBox h3,.topBox h4, .topBox h5,.topBox h6{
+color: #4D4D4D;
+font-family: museo300, Helvetica, Arial, Sans;
 }
 
 .box{
@@ -43,8 +54,7 @@ color: #68838B;
 	padding:0px; 
 	margin-top:20px; 
 	margin-bottom:30px; 
-	border-bottom: 
-	solid #f6f6f6
+	border-bottom: solid #f6f6f6;
 }
 
 @font-face {
